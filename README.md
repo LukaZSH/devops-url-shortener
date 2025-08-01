@@ -26,7 +26,7 @@ A aplicação permite encurtar URLs e rastrear os cliques de forma assíncrona, 
 
 O diagrama abaixo, gerado com a abordagem de "Diagrams as Code" (Python), ilustra o fluxo completo da arquitetura implementada.
 
-`[INSERIR IMAGEM DA ARQUITETURA GERADA PELO diagrams.py AQUI]`
+![Diagrama da Arquitetura GitOps](arquitetura/arquitetura_gitops_-_url_shortener.png)
 
 O fluxo de trabalho funciona da seguinte forma:
 1.  **Desenvolvimento:** O desenvolvedor envia o código para o repositório da aplicação no **GitLab**.
@@ -43,12 +43,17 @@ O fluxo de trabalho funciona da seguinte forma:
 ## ✨ Showcase do Projeto
 
 ### 🚀 Aplicação em Produção
-`[INSERIR PRINT DA APLICAÇÃO ONLINE AQUI]`
+
+<img width="2488" height="1200" alt="Pós deploy no ArgoCD" src="https://github.com/user-attachments/assets/85d8c50c-6cc6-4eef-8fb9-55d298f5b2d6" />
 
 ### 🔄 Pipeline de CI/CD (GitLab)
-`[INSERIR PRINT DA PIPELINE DO GITLAB COM SUCESSO AQUI]`
+
+<img width="2086" height="810" alt="Pipeline final" src="https://github.com/user-attachments/assets/a2709720-5ad6-43d6-8c7d-d4da5478dcac" />
+
 
 ###  ArgoCD em Ação (GitOps)
-`[INSERIR PRINT DO ARGO CD COM A APLICAÇÃO HEALTHY E SYNCED AQUI]`
+
+<img width="2537" height="1431" alt="ArgoCD full healthy" src="https://github.com/user-attachments/assets/175c0c33-61f2-42be-a039-532ae85f372c" />
+
 
 ---
