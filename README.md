@@ -1,79 +1,82 @@
-# 🚀 Projeto de DevOps: Encurtador de URL com Microserviços e GitOps
+<p align="right">
+  <a href="README.md"><img src="https://hatscripts.com/share/images/flags/us.svg" width="24" /> English</a> •
+  <a href="README-pt-br.md"><img src="https://hatscripts.com/share/images/flags/br.svg" width="24" /> Português</a>
+</p>
+
+# 🚀 DevOps Project: URL Shortener with Microservices and GitOps
 
 ![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white) ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white) ![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white) ![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white) ![GitLab CI](https://img.shields.io/badge/gitlab%20ci-%23181717.svg?style=for-the-badge&logo=gitlab&logoColor=B95A20) ![ArgoCD](https://img.shields.io/badge/Argo%20CD-FFFFFF?style=for-the-badge&logo=argo&logoColor=black) ![RabbitMQ](https://img.shields.io/badge/Rabbitmq-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
 
-## 📄 Visão Geral do Projeto
+## 📄 Project Overview
 
-Este repositório documenta a criação e implantação de um **Encurtador de URLs** utilizando uma arquitetura moderna de microserviços. O projeto demonstra um fluxo de trabalho DevOps completo, desde o provisionamento da infraestrutura como código até o deploy contínuo automatizado com GitOps, servindo como um case prático de habilidades prontas para produção.
+This repository documents the creation and deployment of a **URL Shortener** using a modern microservices architecture. The project demonstrates a complete DevOps workflow, from provisioning infrastructure as code to automated continuous deployment with GitOps, serving as a practical, production-ready skills showcase.
 
-A aplicação permite encurtar URLs e rastrear os cliques de forma assíncrona, garantindo alta performance e resiliência.
+The application allows users to shorten URLs and track clicks asynchronously, ensuring high performance and resilience.
 
-## 🛠️ Tecnologias e Pilares DevOps Demonstrados
+## 🛠️ Technologies and DevOps Pillars Demonstrated
 
-| Pilar DevOps | Ferramentas e Conceitos Aplicados |
+| DevOps Pillar | Tools and Concepts Applied |
 | :--- | :--- |
-| **Infraestrutura como Código (IaC)** | **Terraform** para provisionar e gerenciar de forma automatizada o cluster **Kubernetes (DOKS)** na **DigitalOcean**. |
-| **Containerização** | **Docker** para empacotar cada microserviço (`Frontend`, `API Gateway`, `Worker`) em imagens otimizadas, utilizando **builds multi-stage**. |
-| **CI (Integração Contínua)** | **GitLab CI/CD** para automatizar os processos de `linting` (Hadolint), testes, `build`, scan de vulnerabilidades com **Trivy** e `push` das imagens para o **GitLab Container Registry**. |
-| **CD (Deploy Contínuo) & GitOps** | **ArgoCD** para implementar o deploy contínuo. O ArgoCD monitora um repositório de manifestos e sincroniza automaticamente o estado do cluster com o declarado no Git, seguindo o paradigma **pull-based**. |
-| **Arquitetura de Microserviços** | A aplicação é desacoplada em serviços independentes que se comunicam via APIs e mensageria, aumentando a resiliência e a escalabilidade. |
-| **Mensageria e Cache** | **RabbitMQ** como message broker para processamento assíncrono de analytics, e **Redis** como banco de dados de alta velocidade para mapeamento das URLs. |
-| **Orquestração** | **Kubernetes** para orquestrar todos os contêineres, gerenciando o deploy, a rede (`Services`) e a persistência de dados (`PersistentVolumeClaim`) para o **PostgreSQL**. |
+| **Infrastructure as Code (IaC)** | **Terraform** to automatically provision and manage the **Kubernetes (DOKS)** cluster on **DigitalOcean**. |
+| **Containerization** | **Docker** to package each microservice (`Frontend`, `API Gateway`, `Worker`) into optimized images using **multi-stage builds**. **Docker Hub** as the image registry. |
+| **CI (Continuous Integration)** | **GitLab CI/CD** to automate the processes of `linting` (Hadolint), testing, `building`, vulnerability scanning with **Trivy**, and `pushing` images to the **GitLab Container Registry**. |
+| **CD (Continuous Deployment) & GitOps** | **ArgoCD** to implement continuous deployment. ArgoCD monitors a manifest repository and automatically synchronizes the cluster's state with the state declared in Git, following the **pull-based** paradigm. |
+| **Microservices Architecture** | The application is decoupled into independent services that communicate via APIs and messaging, increasing resilience and scalability. |
+| **Messaging and Caching** | **RabbitMQ** as a message broker for asynchronous analytics processing, and **Redis** as a high-speed database for URL mapping. |
+| **Orchestration** | **Kubernetes** to orchestrate all containers, managing deployments, networking (`Services`), and data persistence (`PersistentVolumeClaim`) for **PostgreSQL**. |
 
 ---
 
-## 🏛️ Arquitetura da Solução
+## 🏛️ Solution Architecture
 
-O diagrama abaixo, gerado com a abordagem de "Diagrams as Code" (Python), ilustra o fluxo completo da arquitetura implementada.
+The diagram below, generated with a "Diagrams as Code" approach (Python), illustrates the complete architectural flow implemented in this project.
 
-![Diagrama da Arquitetura GitOps](arquitetura/arquitetura_gitops_-_url_shortener.png)
+![GitOps Architecture Diagram](architecture/Arquitetura_GitOps_-_URL_Shortener.png)
 
-O fluxo de trabalho funciona da seguinte forma:
-1.  **Desenvolvimento:** O desenvolvedor envia o código para o repositório da aplicação no **GitLab**.
-2.  **CI Pipeline:** O `push` aciona a pipeline no **GitLab CI/CD**, que executa testes, linting, build, scan de vulnerabilidades e push das imagens para o **GitLab Container Registry**, além de atualizar a tag da imagem no **repositório de manifestos**.
-3.  **Deploy com GitOps:** O **ArgoCD**, rodando no cluster **Kubernetes**, detecta a alteração no repositório de manifestos e "puxa" os novos manifestos, atualizando a aplicação em produção sem intervenção manual.
-4.  **Acesso:** O usuário final acessa a aplicação através de um **Load Balancer** da DigitalOcean.
+The workflow operates as follows:
+1.  **Development:** The developer pushes code to the application repository on **GitLab**.
+2.  **CI Pipeline:** The `push` triggers the pipeline in **GitLab CI/CD**, which executes tests, linting, builds, vulnerability scans, and pushes the Docker images to the **GitLab Container Registry**, in addition to updating the image tag in the **manifests repository**.
+3.  **GitOps Deployment:** **ArgoCD**, running in the **Kubernetes** cluster, detects the change in the manifests repository and "pulls" the new manifests, updating the application in production without manual intervention.
+4.  **Access:** The end-user accesses the application through a **Load Balancer** provided by DigitalOcean.
 
 ---
 
-## ✨ Showcase do Projeto
+## ✨ Project Showcase
 
-### 🚀 Aplicação em Produção
-*A aplicação URL Shortener, após o deploy bem-sucedido via ArgoCD, acessível publicamente.*
+### 🚀 Application in Production
+*The URL Shortener application, after a successful deployment via ArgoCD, is publicly accessible.*
 
-<img width="2488" height="1200" alt="Pós deploy no ArgoCD" src="https://github.com/user-attachments/assets/85d8c50c-6cc6-4eef-8fb9-55d298f5b2d6" />
+<img width="2488" height="1200" alt="Post deploy in ArgoCD" src="https://github.com/user-attachments/assets/85d8c50c-6cc6-4eef-8fb9-55d298f5b2d6" />
 
-### 🔄 Pipeline de CI/CD (GitLab)
-*O workflow do GitLab Actions mostrando a execução de todos os estágios (Qualidade, Teste, Build & Scan, Deploy) sendo concluídos com sucesso.*
+### 🔄 CI/CD Pipeline (GitLab)
+*The GitLab Actions workflow showing the successful execution of all stages (Quality, Test, Build & Scan, Deploy).*
 
-<img width="2086" height="810" alt="Pipeline final" src="https://github.com/user-attachments/assets/a2709720-5ad6-43d6-8c7d-d4da5478dcac" />
+<img width="2086" height="810" alt="Final pipeline" src="https://github.com/user-attachments/assets/a2709720-5ad6-43d6-8c7d-d4da5478dcac" />
 
-### 🛡️ Scan de Vulnerabilidades em Ação (Trivy)
-*Evidência da etapa de DevSecOps, onde a pipeline falhou ao detectar vulnerabilidades `HIGH` na imagem base do Nginx, bloqueando o deploy. O problema foi resolvido atualizando a tag da imagem no Dockerfile.*
+### 🛡️ Vulnerability Scanning in Action (Trivy)
+*Evidence of the DevSecOps step, where the pipeline failed upon detecting `HIGH` severity vulnerabilities in the Nginx base image, blocking the deployment. The issue was resolved by updating the image tag in the Dockerfile.*
 
-<img width="1445" height="782" alt="vulnerabilidade que o trivy achou" src="https://github.com/user-attachments/assets/b07cd742-58b8-444e-8a6f-9dc093aada2e" />
+`[INSERIR SEU PRINT DO TRIVY AQUI]`
 
+### 📨 Asynchronous Messaging (RabbitMQ)
+*The RabbitMQ management dashboard running in the cluster, showing the "clicks" queue ready to receive and process events in a decoupled and resilient manner.*
 
-### 📨 Mensageria Assíncrona (RabbitMQ)
-*Painel de gerenciamento do RabbitMQ rodando no cluster, mostrando a fila "clicks" pronta para receber e processar eventos de forma desacoplada e resiliente.*
+`[INSERIR SEU PRINT DO RABBITMQ AQUI]`
 
-<img width="2502" height="1048" alt="RabbitMQ" src="https://github.com/user-attachments/assets/59a01773-afa2-44f9-a469-5fa3e6d1554a" />
-
-
-### 🤖 Deploy Contínuo com GitOps (ArgoCD)
-*Visão do ArgoCD com todos os recursos da aplicação sincronizados e saudáveis (`Healthy`), demonstrando que o estado do cluster espelha fielmente o repositório de manifestos.*
+### 🤖 Continuous Deployment with GitOps (ArgoCD)
+*A view of ArgoCD with all application resources synced and healthy, demonstrating that the cluster state faithfully mirrors the manifests repository.*
 
 <img width="2537" height="1431" alt="ArgoCD full healthy" src="https://github.com/user-attachments/assets/175c0c33-61f2-42be-a039-532ae85f372c" />
 
 ---
 
-## 🎓 Conclusão
+## 🎓 Conclusion
 
-Este projeto foi uma imersão prática no ecossistema DevOps, transformando uma aplicação de microserviços em um sistema totalmente automatizado, desde a infraestrutura como código com **Terraform** até o deploy contínuo com **GitLab CI** e **ArgoCD**.
+This project served as a practical, in-depth immersion into the modern DevOps ecosystem, transforming a microservices application into a fully automated system, from infrastructure as code with **Terraform** to continuous deployment with **GitLab CI** and **ArgoCD**.
 
-Os principais resultados foram a criação de uma pipeline resiliente que garante a qualidade e a segurança do código, e a implementação de um fluxo de **GitOps** que torna os deploys mais seguros e rastreáveis.
+The main outcomes were the creation of a resilient pipeline that ensures code quality and security, and the implementation of a **GitOps** workflow that makes deployments safer and more traceable.
 
-### 🚀 Próximos Passos
-* **Implementar Testes de Carga:** Usar K6 para analisar a performance sob estresse.
-* **Adicionar Observabilidade Completa:** Integrar Logging (Loki) e Tracing (Jaeger) para uma visão 360º do sistema.
-* **Otimização de Custos:** Explorar o uso do KEDA para escalar os workers de forma orientada a eventos.
+### 🚀 Next Steps
+* **Implement Load Testing:** Use tools like K6 to analyze performance under stress.
+* **Add Full Observability:** Integrate the **Logging** (with the EFK/Loki stack) and **Tracing** (with Jaeger/OpenTelemetry) pillars for a 360º view of the system's behavior.
+* **Cost Optimization:** Explore using **KEDA** (Kubernetes Event-driven Autoscaling) to scale the analytics workers from zero to `N` based on the number of messages in the RabbitMQ queue.
