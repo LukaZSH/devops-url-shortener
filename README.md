@@ -1,6 +1,7 @@
 <p align="right">
-  <a href="README-en.md"><img src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f1fa-1f1f8.svg" width="24" alt="English" /> English</a> •
-  <a href="README.md"><img src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f1e7-1f1f7.svg" width="24" alt="Português" /> Português</a>
+  <a href="README-en.md" title="English"><img src="https://flagcdn.com/w40/us.png" width="40" alt="English"></a>
+  &nbsp;&nbsp;
+  <a href="README.md" title="Português"><img src="https://flagcdn.com/w40/br.png" width="30" alt="Português"></a>
 </p>
 
 # 🚀 Projeto de DevOps: Encurtador de URL com Microserviços e GitOps
