@@ -6,9 +6,6 @@ analytics-worker/main
 .DS_Store
 Thumbs.db
 
-# Dependências de Node.js (se usar)
-node_modules/
-
 # Arquivos de configuração de IDEs
 .vscode/
 .idea/
@@ -22,6 +19,3 @@ node_modules/
 .terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
-
-# Arquivos gerados pelo Diagrams
-*.png
