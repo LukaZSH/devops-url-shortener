@@ -1,0 +1,27 @@
+# Binários compilados do Go
+api-gateway/main
+analytics-worker/main
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Dependências de Node.js (se usar)
+node_modules/
+
+# Arquivos de configuração de IDEs
+.vscode/
+.idea/
+
+# Arquivos de ambiente com segredos
+.env
+*.env
+
+# Arquivos gerados pelo Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+
+# Arquivos gerados pelo Diagrams
+*.png

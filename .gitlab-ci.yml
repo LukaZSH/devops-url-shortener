@@ -1,0 +1,143 @@
+stages:
+  - quality_checks
+  - test
+  - build_and_scan
+  - update_manifests
+
+# ===================================================================
+# ESTÁGIO 1: VERIFICAÇÃO DE QUALIDADE (LINTING)
+# ===================================================================
+lint-dockerfiles:
+  stage: quality_checks
+  image: hadolint/hadolint:latest-alpine
+  script:
+    - echo "Verificando a qualidade dos Dockerfiles..."
+    - hadolint frontend/Dockerfile
+    - hadolint api-gateway/Dockerfile
+    - hadolint analytics-worker/Dockerfile
+
+lint-go-code:
+  stage: quality_checks
+  image: golangci/golangci-lint:v1.54.2-alpine
+  script:
+    - echo "Verificando a qualidade do código Go..."
+    - cd api-gateway && golangci-lint run --timeout=5m
+    - cd ../analytics-worker && golangci-lint run --timeout=5m
+
+lint-yaml-files:
+  stage: quality_checks
+  image: pipelinecomponents/yamllint:latest # Imagem mais robusta para CI/CD
+  script:
+    - echo "Verificando a qualidade dos arquivos YAML..."
+    - yamllint compose.yaml
+
+# ===================================================================
+# ESTÁGIO 2: TESTE DA APLICAÇÃO
+# ===================================================================
+unit-test-go:
+  stage: test
+  image: golang:1.20-alpine
+  script:
+    - echo "Executando testes unitários para api-gateway..."
+    - cd api-gateway && go test -v ./...
+    - echo "Executando testes unitários para analytics-worker..."
+    - cd ../analytics-worker && go test -v ./...
+
+test-application:
+  stage: test
+  image: docker/compose:1.29.2 # Imagem que contém o docker-compose
+  services:
+    - name: docker:20.10.16-dind # Inicia um serviço Docker-in-Docker para rodar os contêineres
+      alias: docker
+  before_script:
+    # O Docker-in-Docker precisa desta variável para se conectar
+    - export DOCKER_HOST=tcp://docker:2375
+    - apk add --no-cache curl # Instala o curl na imagem
+  script:
+    - echo "Iniciando testes com Docker Compose..."
+    - docker-compose -f compose.yaml up -d --build --force-recreate --always-recreate-deps
+    - echo "Aguardando serviços ficarem saudáveis..."
+    - |
+      for i in $(seq 1 10); do
+        if docker-compose ps | grep -q "(healthy)"; then
+          echo "Serviços saudáveis!"
+          break
+        fi
+        echo "Aguardando serviços... ($i/10)"
+        sleep 5
+      done
+    - echo "Verificando o status dos contêineres:"
+    - docker-compose ps
+    - echo "Testando o endpoint do frontend..."
+    - curl -f http://docker:3000
+
+# ===================================================================
+# ESTÁGIO 3: BUILD, SCAN E PUSH DAS IMAGENS
+# ===================================================================
+build_and_scan_images:
+  stage: build_and_scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""] # Sobrescreve o entrypoint para usar o shell
+  services:
+    - name: docker:20.10.16-dind
+      alias: docker
+  before_script:
+    # Instala o cliente do Docker dentro do contêiner do Trivy
+    - apk add --no-cache docker-cli
+    - export DOCKER_HOST=tcp://docker:2375
+    # Faz o login no registro do GitLab
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "Construindo imagens..."
+    - docker build -t "$CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE/frontend:latest" ./frontend
+    - docker build -t "$CI_REGISTRY_IMAGE/api-gateway:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE/api-gateway:latest" ./api-gateway
+    - docker build -t "$CI_REGISTRY_IMAGE/analytics-worker:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE/analytics-worker:latest" ./analytics-worker
+
+    - echo "Escaneando imagens construídas..."
+    # Escaneia a imagem localmente. Se encontrar vulnerabilidades, o job falha.
+    - trivy image --exit-code 1 --severity CRITICAL,HIGH "$CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA"
+    - trivy image --exit-code 1 --severity CRITICAL,HIGH "$CI_REGISTRY_IMAGE/api-gateway:$CI_COMMIT_SHORT_SHA"
+    - trivy image --exit-code 1 --severity CRITICAL,HIGH "$CI_REGISTRY_IMAGE/analytics-worker:$CI_COMMIT_SHORT_SHA"
+
+    - echo "Enviando imagens para o registro..."
+    # Se o scan passou, envia as imagens.
+    - docker push --all-tags "$CI_REGISTRY_IMAGE/frontend"
+    - docker push --all-tags "$CI_REGISTRY_IMAGE/api-gateway"
+    - docker push --all-tags "$CI_REGISTRY_IMAGE/analytics-worker"
+
+# ===================================================================
+# ESTÁGIO 4: ATUALIZAÇÃO DO REPOSITÓRIO DE MANIFESTOS (GitOps)
+# ===================================================================
+update_manifests:
+  stage: update_manifests
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache git openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H 'gitlab.com' >> ~/.ssh/known_hosts
+    - git config --global user.email "pipeline@devops.com"
+    - git config --global user.name "GitLab CI/CD Pipeline"
+  script:
+    - echo "Clonando o repositório de manifestos..."
+    - git clone git@gitlab.com:lukazsh-group/url-shortener-manifests.git
+    - cd url-shortener-manifests
+
+    - echo "Atualizando as tags das imagens no deployment.yaml..."
+    # Usa a ferramenta 'sed' para substituir a tag da imagem pela nova tag do commit
+    - 'sed -i "s|image: .*url-shortener-app/frontend:.*|image: $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA|g" deployment.yaml'
+    - 'sed -i "s|image: .*url-shortener-app/api-gateway:.*|image: $CI_REGISTRY_IMAGE/api-gateway:$CI_COMMIT_SHORT_SHA|g" deployment.yaml'
+    - 'sed -i "s|image: .*url-shortener-app/analytics-worker:.*|image: $CI_REGISTRY_IMAGE/analytics-worker:$CI_COMMIT_SHORT_SHA|g" deployment.yaml'
+
+    - echo "Enviando as alterações para o repositório de manifestos..."
+    - git add .
+    # Verifica se há mudanças antes de tentar commitar para não dar erro
+    - |
+      if git diff --staged --quiet; then
+        echo "Nenhuma mudança nos manifestos para commitar."
+      else
+        git commit -m "Atualiza tags de imagem para o commit $CI_COMMIT_SHORT_SHA [skip ci]"
+        git push origin main
+      fi

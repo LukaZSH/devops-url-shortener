@@ -1,0 +1,88 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - API_HOST=api-gateway
+      - API_PORT=8080
+    depends_on:
+      - api-gateway
+    networks:
+      - url-shortener-net
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_ADDR=redis:6379
+      - APP_HOST=http://localhost:3000
+      - AMQP_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - url-shortener-net
+
+  analytics-worker:
+    build: ./analytics-worker
+    environment:
+      - AMQP_URL=amqp://guest:guest@rabbitmq:5672/
+      - POSTGRES_CONN_STR=postgres://postgres_user:postgres_password@postgres_db:5432/analytics_db?sslmode=disable
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres_db:
+        condition: service_healthy
+    networks:
+      - url-shortener-net
+
+  redis:
+    image: "redis:7-alpine"
+    networks:
+      - url-shortener-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: "rabbitmq:3.13-management-alpine"
+    ports:
+      - "15672:15672"
+    networks:
+      - url-shortener-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres_db:
+    image: "postgres:15-alpine"
+    environment:
+      - POSTGRES_DB=analytics_db
+      - POSTGRES_USER=postgres_user
+      - POSTGRES_PASSWORD=postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - url-shortener-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres_user -d analytics_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  url-shortener-net:
+    driver: bridge
